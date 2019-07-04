@@ -1,0 +1,2 @@
+recursive-include seclopzapi/templates *
+recursive-include seclopzapi/static *
