@@ -2,10 +2,22 @@
 of processing.
 '''
 
-from dataclasses import dataclass
-from typing import Callable, List
+from dataclasses import dataclass, field
+from typing import Callable, Generic, List, Optional, TypeVar
 
-from seclopzbot.nli.parser import Parser
+from nli.parser import Parser
+
+
+E = TypeVar('E', bound=Exception)  # Generic type that subclasses `Exception`.
+
+
+@dataclass
+class CmdError(Exception, Generic[E]):
+    '''An `Exception` type that indicates that a callback invocation failed.
+    '''
+
+    message: str
+    cause: Optional[E] = field(default=None)
 
 
 @dataclass
@@ -28,3 +40,18 @@ class Command:
     format: str
     callback: Callable[[List[str]], str]
     parser: Parser
+
+
+    def execute(self, input_str: str) -> str:
+        '''Parse an input string to execute a command's callback with any
+        extracted parameters.
+        '''
+
+        args = self.parser.parse(input_str)
+
+        try:
+            return self.callback(args)
+        except Exception as cause:
+            raise CmdError(
+                f'Callback invocation with arguments {args} failed.',
+                cause)

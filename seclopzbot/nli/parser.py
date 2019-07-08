@@ -6,7 +6,7 @@ expected `Command` format.
 from dataclasses import dataclass
 from typing import List
 
-from seclopzbot.nli.transition import Transition
+from nli.transition import Transition
 
 
 @dataclass
@@ -35,3 +35,12 @@ class Parser:
     end: str
     states: List[str]
     transitions: List[Transition]
+
+
+    def parse(self, input_str: str) -> List[str]:
+        '''Parse an input string into tokens and then run it through a
+        deterministic pushdown automaton to extract a list of parameters to
+        a command callback.
+        '''
+
+        return []
