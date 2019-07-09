@@ -87,23 +87,26 @@ class Transition:
     
     def _matches(
             self,
+            state: str,
             rule: MatchRule,
             top_stack_sym: Optional[str],
             tkn: Optional[str]) -> bool:
         txt_pattern = re.compile(self.match)
         stk_pattern = re.compile(self.stack_match)
 
+        state_matches = state == self.fr
         text_matches = tkn is not None and txt_pattern.match(tkn) is not None
         stack_matches = top_stack_sym is not None and\
                 stk_pattern.match(top_stack_sym) is not None
 
-        rule0_match = rule == MatchRule.CHECK_NONE and tkn is None
-        rule1_match = rule == MatchRule.TEXT_ONLY and text_matches
-        rule2_match = rule == MatchRule.STACK_ONLY and stack_matches
-        rule3_match = rule == MatchRule.TEXT_AND_STACKand 
-            text_matches and stack_matches
+        any_rule_applies = any([
+            rule == MatchRule.CHECK_NONE and tkn is None,
+            rule == MatchRule.TEXT_ONLY and text_matches,
+            rule == MatchRule.STACK_ONLY and stack_matches,
+            rule == MatchRule.TEXT_AND_STACK and text_matches and stack_matches
+        ])
 
-        return rule0_match or rule1_match or rule2_match or rule3_match
+        return state_matches and any_rule_applies
 
 
     def _apply_stack_operation(
@@ -139,9 +142,12 @@ class Transition:
 
     def apply(
             self,
+            state: str,
             stack: List[(str, str)],
             token: Optional[str]) -> Optional[str]:
         '''Apply a transition rule to a stack and input token.
+
+        `state` is the symbol representing the current state.
 
         The `stack` is expected to be a list of tagged parameters, created by
         instances of `Transition`.  Each `(str, str)` pair is a
@@ -152,6 +158,10 @@ class Transition:
         was encountered, the `token` can be `None`.
 
         This function returns the next state symbol for the parser to move to.
+
+        If no inputs match, `None` will be returned, indicating that the
+        transition was not followed.
+
         If the `Transition` is configured in such a way that it could not be
         applied in any meaningful way, `None` will be returned.  For example,
         if `pop == True and len(stack) == 0`.
@@ -162,7 +172,7 @@ class Transition:
         does_match = self._matches(match_rule, top_symbol, token)
 
         if does_match:
-            did_op = self._apply_stack_operation(stack, stack_op, token)
+            did_op = self._apply_stack_operation(state, stack, stack_op, token)
             return self.to if did_op else None
 
         return None
