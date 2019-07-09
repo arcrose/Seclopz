@@ -26,7 +26,6 @@ def main():
         parser=Parser(
             start='start',
             end='world',
-            states=['start', 'hello', 'world'],
             transitions=[
                 Transition(fr='start', to='hello', match='hello'),
                 Transition(fr='hello', to='world', match='world')

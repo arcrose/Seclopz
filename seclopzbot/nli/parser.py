@@ -17,8 +17,6 @@ class Parser:
         * `start` is the symbol for the state the parser starts in.
         * `end` is the symbol for the state the parser ends in successful
         termination in.
-        * `states` is a list of symbols, one for each state the parser can
-        enter.
         * `transitions` is a list of `Transition`s describing inputs to match
         against, states to transition to & from and how to manipulate the
         stack.
@@ -33,7 +31,6 @@ class Parser:
 
     start: str
     end: str
-    states: List[str]
     transitions: List[Transition]
 
 
@@ -42,4 +39,4 @@ class Parser:
         deterministic pushdown automaton to extract a tagged set of parameters.
         '''
 
-        return []
+        return {}
