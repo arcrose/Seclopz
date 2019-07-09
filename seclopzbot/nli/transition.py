@@ -3,7 +3,30 @@ that a `Command`'s `Parser` can be in.
 '''
 
 from dataclasses import dataclass, field
-from typing import Optional
+from enum import Enum
+import re
+from typing import List, Optional, Tuple
+
+
+class MatchRule(Enum):
+    '''Enumerates all of the possible rules for matching against an input
+    and stack values.
+    '''
+
+    CHECK_NONE = 0
+    TEXT_ONLY = 1
+    STACK_ONLY = 2
+    TEXT_AND_STACK = 3
+
+
+class StackOperation(Enum):
+    '''Enumerates all of the allowed operations on a stack.
+    '''
+
+    NONE = 0
+    PUSH = 1
+    POP = 2
+    POP_THEN_PUSH = 3
 
 
 @dataclass
@@ -17,12 +40,13 @@ class Transition:
         determine whether to apply the transition.
         * `stack_match` is an optional symbol that can be matched against the
         top item of the stack to determine whether to apply the transition.
-        * `paramis an optional symbol that, when provided, will be used to
+        * `param` is an optional symbol that, when provided, will be used to
         tag a new item to be placed on the stack along with the input token.
         * `pop` is an optional boolean that, when `True` will result in the top
         item of the stack being popped if the transition is followed.
 
-    When both `match` and `stack_match` are `None`
+    When both `match` and `stack_match` are `None`, the transition rule will
+    apply if the input token provided is `None`.
 
     When `param` is provided, `match` is disregarded.  The transition will be
     applied if `stack_match` is not present or it matches the symbol tagging
@@ -41,3 +65,104 @@ class Transition:
     stack_match: Optional[str] = field(default=None)
     param: Optional[str] = field(default=None)
     pop: bool = field(default=False)
+
+
+    def _determine_rules(self) -> Tuple[MatchRule, StackOperation]:
+        match_rule = {
+            (True, False): MatchRule.TEXT_ONLY,
+            (False, True): MatchRule.STACK_ONLY,
+            (True, True): MatchRule.TEXT_AND_STACK,
+            (False, False): MatchRule.CHECK_NONE
+        }[(self.match is not None, self.stack_match is not None)]
+
+        stack_op = {
+            (True, False): StackOperation.PUSH,
+            (False, True): StackOperation.POP,
+            (True, True): StackOperation.POP_THEN_PUSH,
+            (False, False): StackOperation.NONE
+        }[(self.param is not None, self.pop)]
+
+        return (match_rule, stack_op)
+
+    
+    def _matches(
+            self,
+            rule: MatchRule,
+            top_stack_sym: Optional[str],
+            tkn: Optional[str]) -> bool:
+        txt_pattern = re.compile(self.match)
+        stk_pattern = re.compile(self.stack_match)
+
+        text_matches = tkn is not None and txt_pattern.match(tkn) is not None
+        stack_matches = top_stack_sym is not None and\
+                stk_pattern.match(top_stack_sym) is not None
+
+        rule0_match = rule == MatchRule.CHECK_NONE and tkn is None
+        rule1_match = rule == MatchRule.TEXT_ONLY and text_matches
+        rule2_match = rule == MatchRule.STACK_ONLY and stack_matches
+        rule3_match = rule == MatchRule.TEXT_AND_STACKand 
+            text_matches and stack_matches
+
+        return rule0_match or rule1_match or rule2_match or rule3_match
+
+
+    def _apply_stack_operation(
+            self,
+            stack: List[(str, str)],
+            op: StackOperation,
+            value: Optional[str] = None) -> bool:
+        # Note: `None` is a valid value for a parameter to take. We either
+        # parsed out a string parameter value or we did not where we expected
+        # one.  The latter case must be recognized for the parser's use.
+        # Therefore we do not check that `value is not None`.
+        have_param = self.param is not None
+        not_empty = len(stack) > 0
+
+        if op == StackOperation.NONE:
+            return True
+
+        if op == StackOperation.PUSH and have_param:
+            stack.append((self.param, value))
+            return True
+
+        if op == StackOperation.POP and not_empty:
+            stack.pop()
+            return True
+
+        if op == StackOperation.POP_THEN_PUSH and not_empty and have_param:
+            stack.pop()
+            stack.push(self.param)
+            return True
+
+        return False
+
+
+    def apply(
+            self,
+            stack: List[(str, str)],
+            token: Optional[str]) -> Optional[str]:
+        '''Apply a transition rule to a stack and input token.
+
+        The `stack` is expected to be a list of tagged parameters, created by
+        instances of `Transition`.  Each `(str, str)` pair is a
+        `(self.param, token)` where `token` can be `None`.
+
+        The `token` argument is the next input token from a user's input
+        command.  In cases where we may want to indicate that an invalid token
+        was encountered, the `token` can be `None`.
+
+        This function returns the next state symbol for the parser to move to.
+        If the `Transition` is configured in such a way that it could not be
+        applied in any meaningful way, `None` will be returned.  For example,
+        if `pop == True and len(stack) == 0`.
+        '''
+        (match_rule, stack_op) = self._determine_rules()
+        top_symbol = stack[0][0] if len(stack) > 0 else None
+
+        does_match = self._matches(match_rule, top_symbol, token)
+
+        if does_match:
+            did_op = self._apply_stack_operation(stack, stack_op, token)
+            return self.to if did_op else None
+
+        return None
