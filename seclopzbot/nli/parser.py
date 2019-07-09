@@ -5,7 +5,8 @@ expected `Command` format.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List
+import string
+from typing import Dict, List, Optional, Tuple
 
 from nli.transition import Transition
 
@@ -14,7 +15,7 @@ class ParseError(Exception):
     def __init__(
             self,
             state: str,
-            stack: List[(str, str)],
+            stack: List[Tuple[str, str]],
             tokens: List[Optional[str]]):
         self.state = state
         self.stack = stack
@@ -54,25 +55,28 @@ class Parser:
 
 
     def _tokenize(self, input_: str) -> List[Optional[str]]:
-        words = filter(
-            lambda word: len(word) > 0,
-            input_.split(' '))
+        tokens = []
 
-        cleaned = map(
-            # Filter punctuation from each word.
-            lambda word: str(
-                filter(
-                    lambda c: c not in string.punctuation,
-                    word)),
-            words)
+        for word in input_.split(' '):
+            if len(word) == 0:
+                continue
 
-        return list(filter(lambda tkn: len(tkn) > 0, cleaned))
+            cleaned = ''.join(filter(
+                lambda char: char not in string.punctuation,
+                word))
+
+            if len(cleaned) == 0:
+                continue
+
+            tokens.append(cleaned)
+
+        return tokens
 
 
     def _transition(
             self,
             state: str,
-            stack: List[(str, str)],
+            stack: List[Tuple[str, str]],
             tkn: Optional[str]) -> Optional[str]:
         for tx in self.transitions:
             next_state = tx.apply(state, stack, tkn)

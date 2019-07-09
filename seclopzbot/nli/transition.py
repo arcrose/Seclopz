@@ -91,13 +91,21 @@ class Transition:
             rule: MatchRule,
             top_stack_sym: Optional[str],
             tkn: Optional[str]) -> bool:
-        txt_pattern = re.compile(self.match)
-        stk_pattern = re.compile(self.stack_match)
 
         state_matches = state == self.fr
-        text_matches = tkn is not None and txt_pattern.match(tkn) is not None
-        stack_matches = top_stack_sym is not None and\
-                stk_pattern.match(top_stack_sym) is not None
+
+        if self.match is None:
+            text_matches = False
+        else:
+            pattern = re.compile(self.match)
+            text_matches = tkn is not None and pattern.match(tkn) is not None
+
+        if self.stack_match is None:
+            stack_matches = False
+        else:
+            pattern = re.compile(self.stack_match) if have_s_match else None
+            stack_matches = top_stack_sym is not None and\
+                    stk_pattern.match(top_stack_sym) is not None
 
         any_rule_applies = any([
             rule == MatchRule.CHECK_NONE and tkn is None,
@@ -111,7 +119,7 @@ class Transition:
 
     def _apply_stack_operation(
             self,
-            stack: List[(str, str)],
+            stack: List[Tuple[str, str]],
             op: StackOperation,
             value: Optional[str] = None) -> bool:
         # Note: `None` is a valid value for a parameter to take. We either
@@ -143,7 +151,7 @@ class Transition:
     def apply(
             self,
             state: str,
-            stack: List[(str, str)],
+            stack: List[Tuple[str, str]],
             token: Optional[str]) -> Optional[str]:
         '''Apply a transition rule to a stack and input token.
 
@@ -169,10 +177,10 @@ class Transition:
         (match_rule, stack_op) = self._determine_rules()
         top_symbol = stack[0][0] if len(stack) > 0 else None
 
-        does_match = self._matches(match_rule, top_symbol, token)
+        does_match = self._matches(state, match_rule, top_symbol, token)
 
         if does_match:
-            did_op = self._apply_stack_operation(state, stack, stack_op, token)
+            did_op = self._apply_stack_operation(stack, stack_op, token)
             return self.to if did_op else None
 
         return None
