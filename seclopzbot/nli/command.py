@@ -3,7 +3,7 @@ of processing.
 '''
 
 from dataclasses import dataclass, field
-from typing import Callable, Generic, List, Optional, TypeVar
+from typing import Callable, Dict, Generic, List, Optional, TypeVar
 
 from nli.parser import Parser
 
@@ -38,7 +38,7 @@ class Command:
     name: str
     help: str
     format: str
-    callback: Callable[[List[str]], str]
+    callback: Callable[[Dict[str, Optional[str]]], str]
     parser: Parser
 
 

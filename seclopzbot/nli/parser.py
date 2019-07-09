@@ -4,7 +4,7 @@ expected `Command` format.
 '''
 
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List
 
 from nli.transition import Transition
 
@@ -37,10 +37,9 @@ class Parser:
     transitions: List[Transition]
 
 
-    def parse(self, input_str: str) -> List[str]:
+    def parse(self, input_str: str) -> Dict[str, Optional[str]]:
         '''Parse an input string into tokens and then run it through a
-        deterministic pushdown automaton to extract a list of parameters to
-        a command callback.
+        deterministic pushdown automaton to extract a tagged set of parameters.
         '''
 
         return []
