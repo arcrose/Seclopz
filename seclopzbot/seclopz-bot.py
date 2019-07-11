@@ -2,7 +2,8 @@ from typing import Callable, Dict
 
 import click
 
-from nli import Command, Parser, Transition
+import cmd
+from nli.command import CmdError
 
 
 @click.group()
@@ -20,38 +21,18 @@ def cmd2():
     click.echo('seclopzbot cmd2')
 
 
-
-def log_args_and_return(value: str) -> Callable[[Dict[str, str]], str]:
-    def callback(args):
-        print(args)
-        return value
-
-    return callback
-
-
 def main():
-    command = Command(
-        name='hello-world',
-        help='A simple test command that returns "Hello, world"',
-        format='hello world',
-        callback=log_args_and_return('Hello, world'),
-        parser=Parser(
-            start='start',
-            end='world',
-            transitions=[
-                Transition(fr='start', to='hello', match='hello'),
-                Transition(fr='hello', to='world', match='world'),
-                Transition(fr='hello', to='niceties', match='.*', param='n'),
-                Transition(fr='niceties', to='world', match='world')
-            ]
-        ))
+    command = cmd.new_hire([
+        'https://mana.mozilla.org/wiki/display/SECURITY/'\
+                'InfoSec+New+Hire+First+Steps'
+    ])
 
     try:
-        output = command.execute('hello beautiful world')
+        output = command.execute('is there a guide for new hires?')
         print(output)
-    except Exception as ex:
+    except CmdError as ex:
         print('Failed to execute.')
-        print(ex.message)
+        print(ex)
 
 
 if __name__ == '__main__':
