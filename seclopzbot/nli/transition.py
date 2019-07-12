@@ -103,9 +103,9 @@ class Transition:
         if self.stack_match is None:
             stack_matches = False
         else:
-            pattern = re.compile(self.stack_match) if have_s_match else None
+            pattern = re.compile(self.stack_match)
             stack_matches = top_stack_sym is not None and\
-                    stk_pattern.match(top_stack_sym) is not None
+                    pattern.match(top_stack_sym) is not None
 
         any_rule_applies = any([
             rule == MatchRule.CHECK_NONE and tkn is None,
