@@ -37,7 +37,7 @@ class TransitionTests(unittest.TestCase):
                 fr='start', to='end', match='test', stack_match='t')
         state = 'start'
         stack = [('t', 'value')]
-        token = 'testing'
+        token = 'invalid'
 
         assert t.apply(state, stack, token) is None
 
