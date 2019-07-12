@@ -142,7 +142,7 @@ class Transition:
 
         if op == StackOperation.POP_THEN_PUSH and not_empty and have_param:
             stack.pop()
-            stack.push(self.param)
+            stack.append(self.param)
             return True
 
         return False

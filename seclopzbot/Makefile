@@ -13,7 +13,7 @@ run: venv
 	python seclopz-bot.py
 
 test: venv
-	SECLOPZBOT=../settings.cfg venv/bin/python -m unittest discover -s tests
+	SECLOPZBOT=../settings.cfg venv/bin/python -m unittest discover -s .
 
 sdist: venv test
 	venv/bin/python setup.py sdist
