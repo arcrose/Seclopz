@@ -1,39 +1,21 @@
+import os
 from typing import Callable, Dict
 
 import click
+from flask import Flask, request
 
-import cmd
-from nli.command import CmdError
-
-
-@click.group()
-def seclopzbot():
-    pass
-
-@seclopzbot.command()
-def cmd1():
-    '''Command on seclopzbot'''
-    click.echo('seclopzbot cmd1')
-
-@seclopzbot.command()
-def cmd2():
-    '''Command on seclopzbot'''
-    click.echo('seclopzbot cmd2')
+import bot
 
 
-def main():
-    command = cmd.new_hire([
-        'https://mana.mozilla.org/wiki/display/SECURITY/'\
-                'InfoSec+New+Hire+First+Steps'
-    ])
+cfg = bot.Config.load(os.environ.get('SECLOPZ_CONFIG', './config.json'))
+app = Flask('seclopzbot')
+slack_bot = bot.Bot(os.environ['SLACK_TOKEN'], cfg)
 
-    try:
-        output = command.execute('is there a guide for new hires?')
-        print(output)
-    except CmdError as ex:
-        print('Failed to execute.')
-        print(ex)
+
+@app.route('/', methods=['POST'])
+def bot_webhook():
+    return bot.respond_to_message(request.json['message'])
 
 
 if __name__ == '__main__':
-    main()
+    app.run()

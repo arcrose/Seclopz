@@ -6,8 +6,11 @@ clean:
 venv:
 	virtualenv --python=python3 venv && venv/bin/python setup.py develop
 
+deps-dev:
+	pip install -r requirements_dev.txt
+
 deps:
-	pip install --user -r requirements.txt
+	pip install -r requirements.txt
 
 run: venv
 	python seclopz-bot.py
