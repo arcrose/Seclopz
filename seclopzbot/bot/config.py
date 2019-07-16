@@ -8,6 +8,7 @@ class Config:
     '''Configuration parameters required for a `Bot` to operate.
     '''
 
+    channels: List[str]
     new_hire_links: List[str]
 
 
